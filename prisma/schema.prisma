@@ -1,0 +1,122 @@
+// Schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// generator client {
+//  provider = "prisma-client-js"
+//}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+
+// "As a user, I want to add my hotel to the platform. A hotel has name, logo, address, location, star-rating, and several images."
+model Hotel {
+  id         Int         @id @default(autoincrement())
+  name       String
+  address    String
+  location   String     
+  starRating Float?      
+  images     Json        // Changed from String[] to Json
+  ownerId    Int         // References the User that created the hotel
+  owner      User        @relation(fields: [ownerId], references: [id])
+  roomTypes  RoomType[]
+  bookings   Booking[]   // Inverse relation for Booking
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+// "As a hotel owner, I want to define room types, with each type having a name (e.g., twin, double, etc.), amenities, prices per night, and several images."
+model RoomType {
+  id             Int      @id @default(autoincrement())
+  name           String   // e.g., twin, double, suite, etc.
+  amenities      Json     // Changed from String[] to Json
+  pricePerNight  Float
+  availableRooms Int
+  images         Json     // Changed from String[] to Json
+  hotelId        Int
+  hotel          Hotel    @relation(fields: [hotelId], references: [id])
+  bookings       Booking[] // Inverse relation for Booking
+}
+
+// "As a hotel owner, I want to view and update the number of available rooms of each type in my hotel. As a user, I want to book an itinerary that includes a flight (one-way or round-trip) and/or a hotel reservation."
+model Booking {
+  id           Int      @id @default(autoincrement())
+  userId       Int      // References the User who made the booking
+  hotelId      Int      // References the Hotel being booked
+  roomTypeId   Int      // References the RoomType booked
+  checkInDate  DateTime
+  checkOutDate DateTime
+  status       String   // this can be cancelled, confirmed, etc.
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  user     User     @relation(fields: [userId], references: [id])
+  hotel    Hotel    @relation(fields: [hotelId], references: [id])
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  itinerary Itinerary[]
+}
+
+model Itinerary {
+  id            Int   @id @default(autoincrement())
+  userId        Int
+  hotelBooking  Int?   //References the Hotel Room booking
+  flightBooking String?   //References the flight that was booked, In the AFS API
+  finalize      Boolean @default(false)
+
+  booking      Booking?   @relation(fields: [hotelBooking], references: [id])
+  user         User       @relation(fields: [userId], references: [id])      
+}
+
+// The Notification model was genereated with the use of ChatGPT
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  firstName      String   
+  lastName       String
+  email          String    @unique
+  phoneNumber    String    @unique
+  profilePicture String?
+  password       String
+  createdAt      DateTime  @default(now())
+  refreshToken    String?
+  hotels   Hotel[]    // Inverse relation for Hotel
+  bookings Booking[]  // Inverse relation for Booking
+  itinerary Itinerary[]
+  notification Notification[]
+}
+
+model City {
+  id Int @id @default(autoincrement())
+  name String 
+  country String 
+  airports Airport[]
+
+
+  @@unique([name, country])
+  
+}
+
+model Airport {
+  Aid String @id
+  code String
+  name String
+  cityId Int
+  country String
+
+  city City @relation(fields: [cityId], references: [id])
+}

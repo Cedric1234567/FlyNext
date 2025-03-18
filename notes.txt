@@ -1,0 +1,176 @@
+NOTE: The following architecture/plan was written by chatgpt
+==================== FlyNext Backend Assignment - Detailed Steps ====================
+
+OVERALL PROJECT STRUCTURE:
+----------------------------------------
+The project uses Next.js as a backend server with RESTful API endpoints.
+The folder structure is organized as follows:
+
+flynext-backend/
+├── prisma/
+│   ├── schema.prisma              # Database schema (User, Hotel, RoomType, Booking, etc.)
+│   └── migrations/                # Prisma migration files (auto-generated)
+├── src/
+│   ├── app/
+│   │   ├── api/                   # API endpoints (Next.js App Router)
+│   │   │   ├── auth/
+│   │   │   │   ├── login/route.js      # Login endpoint
+│   │   │   │   ├── logout/route.js     # Logout endpoint
+│   │   │   │   └── signup/route.js     # Signup endpoint
+│   │   │   ├── flights/
+│   │   │   │   ├── search/route.js     # Flight search endpoint (AFS integration)
+│   │   │   │   └── verify/route.js     # Flight verification endpoint
+│   │   │   ├── hotels/
+│   │   │   │   ├── [id]/route.js        # Retrieve hotel details by ID / hotel-specific bookings
+│   │   │   │   ├── bookings/route.js    # Hotel booking endpoints
+│   │   │   │   └── index/route.js       # List/Search hotels
+│   │   │   └── bookings/
+│   │   │       └── route.js             # Overall booking management endpoints
+│   │   ├── layout.js              # Optional layout file
+│   │   └── page.js                # Optional landing page
+│   ├── controllers/               # Controllers for handling API requests and responses
+│   │   ├── authController.js      # Authentication related logic
+│   │   ├── flightController.js    # Flight-related logic
+│   │   ├── hotelController.js     # Hotel-related logic
+│   │   └── bookingController.js   # Booking management logic (combining hotels and flights)
+│   ├── services/                  # Business logic layer: interactions with DB (Prisma) and external APIs
+│   │   ├── authService.js         # Functions for user creation, login validation, token generation
+│   │   ├── flightService.js       # Functions to call the Advanced Flights System (AFS)
+│   │   ├── hotelService.js        # Functions for managing hotels, room types, and hotel bookings
+│   │   └── bookingService.js      # Functions for handling overall booking logic
+│   ├── utils/                     # Utility functions and helpers
+│   │   ├── jwt.js                 # JWT token generation & verification functions
+│   │   ├── apiClient.js           # Helper for making secure calls to the AFS (external API)
+│   │   ├── validators.js          # Request validation functions (e.g., for signup and booking)
+│   │   └── pdfGenerator.js        # Code to generate PDF invoices for bookings
+│   └── ...                        # Additional support files, if needed
+├── scripts/                       # Automation scripts
+│   ├── startup.sh                 # Script to install dependencies, run migrations, preload data (cities/airports)
+│   └── run.sh                     # Script to start the Next.js server
+├── Dockerfile                     # (Optional for Part 2) Docker container configuration
+├── postman_collection.json        # Postman collection for API endpoints and sample requests
+├── collection.openapi             # Swagger/OpenAPI documentation file for API endpoints
+├── .env                           # Environment variables (DATABASE_URL, AFS API key, etc.)
+├── package.json                   # Project configuration and dependencies
+├── package-lock.json              # Dependency lock file
+└── README.md                      # Project overview, setup instructions, and team notes
+
+==================== MEMBER ASSIGNMENTS ====================
+
+-------------------- MEMBER A: Authentication & User Management --------------------
+Start Here:
+  1. Open prisma/schema.prisma and define the "User" model.
+     - Include fields: id, email, password, firstName, lastName, createdAt.
+     - Example:
+         model User {
+           id        Int      @id @default(autoincrement())
+           email     String   @unique
+           password  String
+           firstName String?
+           lastName  String?
+           createdAt DateTime @default(now())
+         }
+  2. Run:
+         npx prisma migrate dev --name init
+     to apply the changes and update the database.
+
+Steps:
+  A. Create API Endpoints in src/app/api/auth/:
+       - signup/route.js: Handle POST requests for user registration.
+       - login/route.js: Handle POST requests for user login.
+       - logout/route.js: Handle user logout requests.
+  B. Develop Controllers:
+       - Create src/controllers/authController.js:
+           • Functions: signupUser(req, res), loginUser(req, res), logoutUser(req, res).
+           • Validate request data, call service functions, and send JSON responses.
+  C. Develop Services:
+       - Create src/services/authService.js:
+           • Functions: createUser(email, password, ...), validateUser(email, password), generateToken(user).
+           • Interact with the Prisma client to create or retrieve user data.
+  D. Implement JWT Handling:
+       - In src/utils/jwt.js, create functions to generate and verify JWT tokens.
+  E. Testing:
+       - Use Postman to test signup, login, and logout endpoints.
+       - Confirm that a valid JWT token is returned upon login and that protected endpoints later can verify it.
+
+End Result for Member A:
+  - A fully functional authentication system where users can register, log in, and log out.
+  - JWT tokens are created and validated properly.
+  - User data is stored in the database via Prisma.
+
+-------------------- MEMBER B: Hotel Management & Booking --------------------
+Start Here:
+  1. Update prisma/schema.prisma with additional models:
+     - Hotel model: fields such as id, name, address, rating, images, etc.
+     - RoomType model: fields such as id, name, amenities, price, availableRooms, hotelId (relation).
+     - Booking model: fields to record booking details (id, userId, hotelId, roomTypeId, dates, status, etc.).
+  2. Run:
+         npx prisma migrate dev --name add-hotel-models
+     to apply these changes.
+
+Steps:
+  A. Create Hotel API Endpoints in src/app/api/hotels/:
+       - index/route.js: To list and search hotels.
+       - [id]/route.js: To get details of a specific hotel and/or handle hotel-specific bookings.
+       - bookings/route.js: To manage hotel booking operations.
+  B. Develop Controllers:
+       - Create src/controllers/hotelController.js:
+           • Functions for creating hotels, updating hotel information, and retrieving hotel details.
+       - Create src/controllers/bookingController.js:
+           • Functions for creating and cancelling bookings.
+  C. Develop Services:
+       - Create src/services/hotelService.js:
+           • Functions for hotel CRUD operations and managing room types.
+       - Create src/services/bookingService.js:
+           • Functions for booking creation, cancellation, and updating room availability.
+  D. Integration:
+       - Ensure booking endpoints check with hotelService to update room availability.
+       - Connect hotel endpoints with authentication (Member A) to ensure only authorized hotel owners can create or update hotels.
+  E. Testing:
+       - Use Postman to simulate hotel creation, searching, and booking.
+       - Verify that bookings correctly update room availability.
+
+End Result for Member B:
+  - A complete hotel management module where hotel owners can add/update hotels and room types.
+  - Visitors can search hotels and create bookings.
+  - Booking system properly tracks room availability and allows cancellation.
+
+-------------------- MEMBER C: Flight Integration & API Documentation --------------------
+Start Here:
+  1. Configure External API Integration:
+     - In .env, add your AFS API key and any required configuration (e.g., AFS_BASE_URL).
+     - In src/utils/apiClient.js, set up a helper to make secure HTTP requests to the AFS.
+         • Include code to automatically attach the API key from process.env.
+     
+Steps:
+  A. Create Flight API Endpoints in src/app/api/flights/:
+       - search/route.js: Endpoint for flight search requests.
+       - verify/route.js: Endpoint for verifying flight bookings.
+  B. Develop Controllers:
+       - Create src/controllers/flightController.js:
+           • Functions to handle flight search and verification requests.
+           • Call the corresponding flight service functions.
+  C. Develop Services:
+       - Create src/services/flightService.js:
+           • Functions to interact with the Advanced Flights System via the API client.
+           • Parse responses and format them as JSON.
+  D. API Documentation:
+       - Update postman_collection.json with detailed flight endpoints and sample requests/responses.
+       - Update collection.openapi with Swagger/OpenAPI documentation for flight endpoints.
+  E. Testing:
+       - Use Postman to test flight search and verification endpoints.
+       - Ensure external API calls are working properly and data is returned in the expected format.
+
+End Result for Member C:
+  - A fully functional flight integration module that securely calls the AFS to fetch and verify flight data.
+  - Flight endpoints return accurate and properly formatted JSON responses.
+  - Up-to-date Postman and Swagger documentation reflecting the flight API.
+
+==================== FINAL INTEGRATION & TEAM COLLABORATION =====================
+- Regularly merge changes and perform integration tests:
+     • Verify that a logged-in user (Member A) can make a hotel booking (Member B) and search for flights (Member C).
+- Maintain shared utilities (e.g., JWT verification, error handling) consistently across modules.
+- Update README.md with clear setup instructions and usage details for all endpoints.
+- Ensure all scripts (startup.sh and run.sh) work smoothly for all team members.
+
+====================================================================================
