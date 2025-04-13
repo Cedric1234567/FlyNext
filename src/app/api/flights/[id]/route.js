@@ -1,49 +1,61 @@
-import {apiClient} from "../../../../utils/apiClient";
+import { apiClient } from "../../../../utils/apiClient";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-/*This allows a client to retrieve precise/all the information of a flight based on its id and of course source/destination/date which allows
-us to communicate with the AFS.
 
-HELP OF CHATGPT: Explaining the find and flatMap functions*/
-export async function GET(req, {params}) {
-    try{
-        
-        const {id} = await params;
-        
-        const searchParams = req.nextUrl.searchParams;
-        const {source, destination, dates} = Object.fromEntries(searchParams.entries());
+/*This allows a client to retrieve precise/all the information of a flight based on its id.*/
 
-        const filters = {};
+export async function GET(req, { params }) {
+    try {
+        const { id } = params;
 
-        if(!source || !destination || !dates){
-            return new Response(JSON.stringify("You must enter a value for all fields!"), {status: 400});
-        }
-        if(source){
-            filters.origin = source;
+        if (!id) {
+            return new Response(JSON.stringify("Flight ID is required!"), { status: 400 });
         }
 
-        if(destination){
-            filters.destination = destination;
-        }
-
-        if(dates){
-            filters.date = dates;
-        }    
-        
-        
+        // Fetch flight details using the provided ID
+        const url = new URL (`${process.env.AFS_URL}/api/flights/${id}`);
     
-        const response = await apiClient('/api/flights',"GET" ,filters);
-        
-        const final_response= response.results.flatMap(res => res.flights).find(flight => flight.id === id);
-        
-
-        if (!final_response){
-            return new Response(JSON.stringify({error:'Flight not found'}), {status:400});
+        let options = {
+            method: "GET",
+            headers: {
+                    "x-api-key" : process.env.AFS_KEY,
+                    "Content-Type": "application/json"
+            }
         }
-        return new Response(JSON.stringify(final_response), {status: 200})
-        
-    } catch(error){
-        return new Response(JSON.stringify("Error while fetching flights"), {status: 500});
-    }
+    
+        const response = await fetch(url, options);
 
+        if (!response || !response.ok) {
+            return new Response(JSON.stringify({ error: 'Flight not found' }), { status: 404 });
+        }
+
+        const flightDetails = await response.json();
+
+
+        return new Response(JSON.stringify(extractFlightDetails(flightDetails)), { status: 200 });
+    } catch (error) {
+        return new Response(JSON.stringify("Error while fetching flight details"), { status: 500 });
+    }
 }
+
+function extractFlightDetails(flightData) {
+    // Extract the relevant data fields
+    const flightId = flightData.id;
+    const airlineName = flightData.airline.name;
+    const Airports = `${flightData.origin.name} → ${flightData.destination.name}`;
+    const flightNumber = flightData.flightNumber;
+    const availableSeats = flightData.availableSeats;
+    const durationInHours = (flightData.duration / 60).toFixed(2); // Convert duration to hours
+    const status = flightData.status;
+  
+    // Return the extracted details in a structured format
+    return {
+      flightId,
+      airlineName,
+      Airports,
+      flightNumber,
+      availableSeats,
+      durationInHours,
+      status,
+    };
+  }

@@ -35,15 +35,30 @@ export async function GET(req) {
         const response = await apiClient('/api/flights',"GET" ,filters);
         const final_response= response.results.map((itinerary, index) => {
             const flights = itinerary.flights;
+
+            const totalPrice = flights.reduce((sum, flight) => sum + flight.price, 0);
+            const currency = flights[0]?.currency || "";
+
+            const airlines = flights.map(f => f.airline.name);
+
+            const route_summary = flights.map(flight => {
+                return `${flight.origin.code} (${flight.departureTime}) → ${flight.destination.code} (${flight.arrivalTime})`;
+            });
             return {
                 id: index + 1,
                 flightIds: flights.map(flight => flight.id), 
                 departure_time: flights[0].departureTime,
                 arrival_time: flights[flights.length - 1].arrivalTime,
-                duration: flights.reduce((sum, flight) => sum + flight.duration, 0), 
+                duration: ((flights.reduce((sum, flight) => sum + flight.duration, 0))/60).toFixed(2),
                 layovers: flights.length > 1 
                     ? flights.slice(0, -1).map(f => f.destination.code)
-                    : []
+                    : [],
+                source: flights[0].origin.city,
+                destination: flights[flights.length - 1].destination.city,
+                currency,
+                totalPrice,
+                route_summary,
+                airlines,
             };
         });
         return new Response(JSON.stringify(final_response), {status: 200})

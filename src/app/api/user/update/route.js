@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword,verifyToken } from "../../../../utils/auth";
+import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +19,16 @@ export async function PATCH(request) {
     try {
         const { searchParams } = new URL(request.url);
         const userId = parseInt(searchParams.get("userId"));
-        const { email, firstName, lastName, phoneNumber, profilePicture, password } = await request.json();
+        const formData = await request.formData();
+
+        const firstName = formData.get("firstName");
+        const lastName = formData.get("lastName");
+        const phoneNumber = formData.get("phoneNumber");
+        const profilePicture = formData.get("profilePicture"); // This may be a File object
+        const password = formData.get("password");
+        const email = formData.get("email");
+
+        // const { email, firstName, lastName, phoneNumber, profilePicture, password } = await request.json();
         if (!firstName && !lastName && !phoneNumber && !profilePicture && !password && !email) {
             return new Response("No fields to update", { status: 400 });
         }
@@ -42,6 +52,8 @@ export async function PATCH(request) {
         if (email) {
             updateData.email = email;
         }
+
+        console.log("Update data",updateData);
 
         const user = await prisma.user.update({
             where: { id: userId },

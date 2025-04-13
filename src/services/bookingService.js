@@ -84,10 +84,9 @@ export async function createBookingService(data, userId) {
     },
   });
 
-  // Update the room availability: decrement availableRooms by 1
   await prisma.roomType.update({
     where: { id: Number(data.roomTypeId) },
-    data: { availableRooms: roomType.availableRooms - 1 },
+    data: { availableRooms: roomType.availableRooms},
   });
 
   return newBooking;
@@ -194,7 +193,7 @@ export async function cancelBookingService(bookingId, userId) {
   if (roomType) {
     await prisma.roomType.update({
       where: { id: booking.roomTypeId },
-      data: { availableRooms: roomType.availableRooms + 1 },
+      data: { availableRooms: roomType.availableRooms},
     });
   }
   

@@ -3,6 +3,8 @@
  */
 import PDFDocument from "pdfkit";
 import { Readable } from "stream";
+import path from "path";
+import fs from "fs";
 
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
@@ -14,7 +16,20 @@ export async function generateInvoice(booking,flight) {
         }
       })();
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({font : 'Times-Roman'});
+    
+    // let fontPath = path.join(__dirname, "/../fonts/times.ttf");
+    // console.log("Font path:", fontPath);
+
+    // if (!fs.existsSync(fontPath)) {
+    //     console.error("Font file not found at:", fontPath);
+    // } else {
+    //     console.log("Font file found at:", fontPath);
+    // }
+
+    // doc.font(fontPath);
+
+    // doc.font("Times-Roman");
     
     doc.fontSize(20).text("Trip Booking Invoice", { align: "center" });
   
@@ -34,14 +49,14 @@ export async function generateInvoice(booking,flight) {
         flight.flights.forEach(flight => {
             totalPrice += flight.price;
             doc.text(`Flight: ${flight.flightNumber}`);
-            doc.text(`Price: $${flight.depatureTime}`);
+            doc.text(`Price: $${flight.departureTime}`);
             doc.text(`Price: $${flight.arrivalTime}`); 
             doc.moveDown();
         });
         doc.moveDown();
     }
 
-    if (booking) {
+    if (booking && booking.status !== "cancelled") {
         const hotel = await prisma.hotel.findUnique({
         where: { id: booking.hotelId },
         });
@@ -55,19 +70,19 @@ export async function generateInvoice(booking,flight) {
         const numberOfDays = Math.ceil(
             (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)
         );
-        totalPrice += roomType.price * numberOfDays;
+        totalPrice += roomType.pricePerNight * numberOfDays;
         doc.text("Hotel Details:", { underline: true });
         doc.text(`Hotel Name: ${hotel.name}`);
         doc.text(`Location: ${hotel.address}`);
-        doc.text(`Check-in: ${booking.checkInDate}`);
-        doc.text(`Check-out: ${booking.checkOutDate}`);
+        doc.text(`Check-in: ${checkInDate}`);
+        doc.text(`Check-out: ${checkOutDate}`);
         doc.text(`Room Type: ${roomType.name}`);
-        doc.text(`Price per night: $${roomType.price}`);
-        doc.text(`Price for rooms: $${roomType.price * numberOfDays}`);
+        doc.text(`Price per night: $${roomType.pricePerNight}`);
+        doc.text(`Price for rooms: $${roomType.pricePerNight * numberOfDays}`);
         doc.moveDown();
     }
 
-   doc.text(`Total Price: $${booking.totalPrice}`, { bold: true });
+   doc.text(`Total Price: $${totalPrice}`, { bold: true });
    doc.moveDown();
 
     doc.text("Thank you for booking with us!", { align: "center" });

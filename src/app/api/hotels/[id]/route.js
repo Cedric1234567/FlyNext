@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getHotelById, updateHotel, deleteHotel } from '@/controllers/hotelController';
 import { verifyToken } from '../../../../utils/auth';
+import { prisma } from '@/prismaClient';
 
 export async function GET(request, { params }) {
   try {

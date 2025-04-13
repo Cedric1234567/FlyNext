@@ -3,11 +3,17 @@
 import { NextResponse } from "next/server";
 import { updateRoomTypeService, deleteRoomTypeService } from "../../../../../../services/hotelService";
 import { verifyToken } from "../../../../../../utils/auth";
+import { prisma } from '@/prismaClient';
 
 export async function PATCH(request, { params }) {
   try {
     const token = verifyToken(request);
     if (!token || (token && token.error)) {
+      if (token.error) {
+        console.error("Token error:", token.error);
+      }else{
+        console.error("Token not found");
+      }
       return NextResponse.json({ error: "Unauthorized Access" }, { status: 401 });
     }
     const { id: hotelId, roomTypeId } = params;
@@ -25,6 +31,7 @@ export async function DELETE(request, { params }) {
   try {
     const token = verifyToken(request);
     if (!token) {
+      console.error("Token not found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

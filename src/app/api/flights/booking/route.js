@@ -36,7 +36,7 @@ export async function POST(req){
         
 
         const response = await apiClient("/api/bookings", "POST", data);
-
+        console.log("API", response);
         return new Response(JSON.stringify(response), {status: 200});
 
     }catch (error){

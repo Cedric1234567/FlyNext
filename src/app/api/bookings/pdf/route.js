@@ -47,9 +47,14 @@ export async function GET(request) {
             flight = await apiClient("/api/bookings/retrieve","GET", data);
         }
 
-        const pdfStream = generateInvoice(booking, flight);
+        const pdfStream = await generateInvoice(booking, flight);
 
-        return NextResponse.json({url:`invoice-${itinerary.id}.pdf`, message: "PDF Generated" }, { status: 200 });
+        const headers = new Headers({
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="invoice-${itineraryId}.pdf"`,
+        });
+    
+        return new NextResponse(pdfStream, { headers });
     } catch (error) {
         console.error("Error in GET /api/bookings/pdf:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

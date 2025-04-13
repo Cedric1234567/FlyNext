@@ -9,13 +9,21 @@ export async function listHotelsService(filters) {
   // Build basic filters for hotels
   const whereClause = {};
   if (filters.city) {
-    whereClause.location = filters.city;
+    whereClause.location = { contains: filters.city, mode: 'insensitive' };
   }
   if (filters.name) {
     whereClause.name = { contains: filters.name, mode: 'insensitive' };
   }
   if (filters.starRating) {
-    whereClause.starRating = Number(filters.starRating);
+    const ratingNum = Number(filters.starRating);
+    if (!isNaN(ratingNum)) { // Check if conversion was successful
+      whereClause.starRating = { gte: ratingNum }; // Use 'gte'
+      console.log("Applying MINIMUM starRating filter:", whereClause.starRating);
+    } else {
+       console.warn("Received invalid starRating filter value:", filters.starRating);
+    }
+  } else {
+     console.log("No star rating filter applied.");
   }
   
   const roomTypeFilter = {};
@@ -29,8 +37,20 @@ export async function listHotelsService(filters) {
     }
   }
   if (filters.amenities) {
-    const amenitiesArray = filters.amenities.split(',').map(a => a.trim());
-    roomTypeFilter.amenities = { hasEvery: amenitiesArray };
+    const amenitiesString = filters.amenities;
+    console.log("Received amenities string:", amenitiesString);
+    const amenitiesArray = amenitiesString.split(',')
+                                      .map(a => a.trim().toLowerCase()) // Convert to lowercase for case-insensitive comparison
+                                      .filter(Boolean); // Ensure empty strings are removed
+    console.log("Parsed amenities array (lowercase):", amenitiesArray);
+    if (amenitiesArray.length > 0) {
+        // Use a complex filter where we check each room type amenity in lowercase form
+        roomTypeFilter.amenities = {
+            hasSome: amenitiesArray.map(amenity => new RegExp(amenity, 'i').toString())
+        };
+        // Alternatively, filter in application code after query if regex doesn't work well with Prisma
+        console.log("Applying case-insensitive amenities filter:", roomTypeFilter.amenities);
+    }
   }
 
   if (filters.roomTypeId) {
@@ -41,6 +61,7 @@ export async function listHotelsService(filters) {
   }
   // if no date range is provided, we simply require availableRooms > 0.
   if (!filters.checkInDate || !filters.checkOutDate) {
+    console.log("No check-in/check-out dates provided. Filtering by available rooms.");
     roomTypeFilter.availableRooms = { gt: 0 };
   }
   if (Object.keys(roomTypeFilter).length > 0) {
@@ -60,6 +81,7 @@ export async function listHotelsService(filters) {
 
     // If check-in and check-out dates are provided, recalculate availability.
     if (filters.checkInDate && filters.checkOutDate) {
+      consoile.log("Check-in and check-out dates provided. Calculating effective availability.");
       const requestedCheckIn = new Date(filters.checkInDate);
       const requestedCheckOut = new Date(filters.checkOutDate);
       
@@ -69,6 +91,9 @@ export async function listHotelsService(filters) {
         const availableRoomTypes = hotel.roomTypes.map(rt => {
           // Count bookings that overlap with the requested date range.
           const overlappingBookings = rt.bookings.filter(booking => {
+            // Only consider confirmed bookings
+            if (booking.status !== "confirmed") return false;
+            
             const bookingCheckIn = new Date(booking.checkInDate);
             const bookingCheckOut = new Date(booking.checkOutDate);
             // Overlap if: booking starts before requested check-out AND booking ends after requested check-in.
@@ -98,29 +123,75 @@ export async function listHotelsService(filters) {
  * Create a new hotel.
  */
 export async function createHotelService(data, ownerId) {
+  // 1. Input Validation & Sanitization
+  const name = data.name?.trim();
+  const address = data.address?.trim();
+  const location = data.location?.trim();
+  let starRating = data.starRating; // Keep original for validation
+  const logoUrl = data.logoUrl?.trim() || null;
+
+  if (logoUrl && !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/'))) {
+    const err = new Error('Invalid Logo URL format. Must start with http://, https://, or /.');
+    err.status = 400;
+    throw err;
+}
+
+  if (!name || !address || !location) {
+    const err = new Error('Missing required fields: name, address, and location cannot be empty.');
+    err.status = 400; // Bad Request
+    throw err;
+  }
+
+  // Validate starRating if provided
+  let ratingValue = null; 
+  if (starRating !== undefined && starRating !== null && starRating !== '') {
+      ratingValue = Number(starRating);
+      if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+           const err = new Error('Invalid star rating provided. Must be between 1 and 5.');
+           err.status = 400;
+           throw err;
+      }
+  }
+
+
+  // Sanitize images array
+  const images = (Array.isArray(data.images) ? data.images : [])
+                    .map(img => typeof img === 'string' ? img.trim() : '')
+                    .filter(url => url && url.length > 10 && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')));
+
+  console.log(`Service: Creating hotel owned by ${ownerId} with sanitized data:`, { name, address, location, starRating: ratingValue, images, logoUrl });
+
+  // 2. Database Operation
   try {
     const newHotel = await prisma.hotel.create({
       data: {
-        name: data.name,
-        address: data.address,
-        location: data.location,
-        starRating: data.starRating ? Number(data.starRating) : null,
-        images: data.images,
-        ownerId: ownerId,
+        name: name,
+        address: address,
+        location: location,
+        starRating: ratingValue, // Use validated/nulled rating
+        images: images,
+        logoUrl: logoUrl,
+        ownerId: Number(ownerId),
       },
     });
+    console.log("Service: Hotel created successfully:", newHotel.id);
     return newHotel;
-  } catch (error) {
-    const err = new Error('Failed to create hotel: ' + error.message);
-    err.status = 500;
+
+  } catch (error) { 
+    console.error("Service Error: Prisma failed to create hotel:", error);
+    // Throw a generic internal server error for database issues
+    const err = new Error('Failed to create hotel in database.');
+    err.status = 500; // Internal Server Error
     throw err;
   }
 }
+
 
 /**
  * Retrieve a hotel by its ID.
  */
 export async function getHotelByIdService(id, dateFilters = {}) {
+  console.log("Fetching hotel with ID:", id);
   try {
     // Fetch the hotel including its room types and their bookings.
     const hotel = await prisma.hotel.findUnique({
@@ -146,6 +217,7 @@ export async function getHotelByIdService(id, dateFilters = {}) {
         return { ...rt, effectiveAvailability };
       });
     }
+    console.log("Hotel fetched successfully:", hotel);
     return hotel;
   } catch (error) {
     if (!error.status) {
@@ -162,42 +234,109 @@ export async function getHotelByIdService(id, dateFilters = {}) {
  * Only the hotel owner can update the hotel.
  */
 export async function updateHotelService(id, data, userId) {
+  const hotelIdNum = Number(id);
+  if (isNaN(hotelIdNum)) {
+      const err = new Error("Invalid Hotel ID provided.");
+      err.status = 400;
+      throw err;
+  }
+
   try {
+    // 1. Fetch Hotel and Verify Ownership
     const hotel = await prisma.hotel.findUnique({
-      where: { id: Number(id) },
+      where: { id: hotelIdNum },
     });
+
     if (!hotel) {
       const err = new Error("Hotel not found");
       err.status = 404;
       throw err;
     }
     if (hotel.ownerId !== userId) {
-      const err = new Error("Unauthorized: You are not the owner of this hotel.");
-      err.status = 403;
+      const err = new Error("Unauthorized: You do not own this hotel.");
+      err.status = 403; // Forbidden
       throw err;
     }
-    
-    // Build update data dynamically to avoid overwriting with undefined values.
-    const updateData = {
-      name: data.name !== undefined ? data.name : hotel.name,
-      address: data.address !== undefined ? data.address : hotel.address,
-      location: data.location !== undefined ? data.location : hotel.location,
-      starRating: data.starRating !== undefined ? Number(data.starRating) : hotel.starRating,
-      images: data.images !== undefined ? data.images : hotel.images,
-    };
 
+    const updateData = {}; 
+
+    // 2. Build Update Payload with Validation & Sanitization
+
+    // Process name (if present)
+    if (data.name !== undefined) {
+      const name = data.name?.trim();
+      if (!name) { const err = new Error("Hotel name cannot be empty."); err.status=400; throw err; }
+      updateData.name = name;
+    }
+
+    // Process address (if present)
+    if (data.address !== undefined) {
+      const address = data.address?.trim();
+      if (!address) { const err = new Error("Address cannot be empty."); err.status=400; throw err; }
+      updateData.address = address;
+    }
+
+    // Process location (if present)
+    if (data.location !== undefined) {
+      const location = data.location?.trim();
+      if (!location) { const err = new Error("Location cannot be empty."); err.status=400; throw err; }
+      updateData.location = location;
+    }
+
+    // Process starRating (if present)
+    if (data.starRating !== undefined) {
+        let ratingValue = null; // Declare ratingValue here
+        if (data.starRating !== null && data.starRating !== '') {
+            ratingValue = Number(data.starRating);
+            if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+                const err = new Error("Invalid star rating (must be 1-5 or null/empty)."); err.status=400; throw err;
+            }
+        }
+        updateData.starRating = ratingValue; // Assign null or the validated number
+    }
+
+    // Process logoUrl (if present) - Now updateData exists
+    if (data.logoUrl !== undefined) {
+      const logoUrl = data.logoUrl?.trim() || null; // Allow setting to null/empty
+      if (logoUrl && !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/'))) {
+           const err = new Error('Invalid Logo URL format.'); err.status=400; throw err;
+      }
+      updateData.logoUrl = logoUrl; // Assign null or the validated URL
+    }
+
+    // Process images (if present)
+    if (data.images !== undefined) {
+      // Ensure it's an array and sanitize
+      updateData.images = (Array.isArray(data.images) ? data.images : [])
+                            .map(img => typeof img === 'string' ? img.trim() : '')
+                            .filter(url => url && url.length > 10 && (url.startsWith('http') || url.startsWith('/')));
+       console.log("Service UpdateHotel: Sanitized images:", updateData.images);
+    }
+
+    // Check if any updates are actually being made
+    if (Object.keys(updateData).length === 0) {
+       console.log("Service UpdateHotel: No valid fields provided for update. No changes made.");
+       return hotel; // Return the original hotel data if nothing changed
+    }
+
+    // 3. Perform Prisma Update
+    console.log(`Service: Updating hotel ${hotelIdNum} with payload:`, updateData);
     const updatedHotel = await prisma.hotel.update({
-      where: { id: Number(id) },
-      data: updateData,
+      where: { id: hotelIdNum },
+      data: updateData, // Pass the dynamically built update object
     });
+    console.log("Service UpdateHotel: Update successful.");
     return updatedHotel;
-  } catch (error) {
+
+  } catch (error) { // Catch block
+    console.error(`Service Error updating hotel ${id}:`, error);
+
     if (!error.status) {
-      const err = new Error("Failed to update hotel: " + error.message);
-      err.status = 500;
+      const err = new Error(`Failed to update hotel: ${error.message}`);
+      err.status = 500; // Default internal error
       throw err;
     }
-    throw error;
+    throw error; // Re-throw errors with status codes (like 400, 403, 404)
   }
 }
 
@@ -236,109 +375,159 @@ export async function deleteHotelService(id, userId) {
 }
 
 export async function createRoomTypeService(hotelId, data, userId) {
+  const hotelIdNum = Number(hotelId);
+  if (isNaN(hotelIdNum)) {
+       const err = new Error("Invalid Hotel ID provided.");
+       err.status = 400;
+       throw err;
+  }
+
   try {
-    // Ensure that a valid userId is provided.
-    if (!userId) {
-      const error = new Error("Unauthorized: User is not authenticated.");
-      error.status = 401;
-      throw error;
+    // --- Authorization & Hotel Check ---
+    if (!userId) { const err = new Error("Unauthorized."); err.status = 401; throw err; } // Simplified error
+    const hotel = await prisma.hotel.findUnique({ where: { id: hotelIdNum }, select: { ownerId: true } });
+    if (!hotel) { const err = new Error("Hotel not found."); err.status = 404; throw err; }
+    if (hotel.ownerId !== userId) { const err = new Error("Unauthorized."); err.status = 403; throw err; }
+    // --- End Auth Check ---
+
+    // --- Data Validation & Sanitization ---
+    const name = data.name?.trim();
+    const pricePerNight = data.pricePerNight;
+    const availableRooms = data.availableRooms;
+
+    if (!name) { const err = new Error("Room type name cannot be empty."); err.status = 400; throw err; }
+
+    const priceValue = Number(pricePerNight);
+    if (pricePerNight === undefined || pricePerNight === null || isNaN(priceValue) || priceValue < 0) {
+         const err = new Error("Invalid or missing price per night."); err.status = 400; throw err;
+    }
+    const roomsValue = Number(availableRooms);
+    if (availableRooms === undefined || availableRooms === null || isNaN(roomsValue) || roomsValue < 0 || !Number.isInteger(roomsValue)) {
+         const err = new Error("Invalid or missing available rooms count."); err.status = 400; throw err;
     }
 
-    // Verify that the hotel exists.
-    const hotel = await prisma.hotel.findUnique({
-      where: { id: Number(hotelId) },
-    });
-    if (!hotel) {
-      const error = new Error("Hotel not found.");
-      error.status = 404;
-      throw error;
-    }
+    const amenities = (Array.isArray(data.amenities) ? data.amenities : [])
+                        .map(a => typeof a === 'string' ? a.trim() : '')
+                        .filter(Boolean);
 
-    // Check if the authenticated user is the owner of the hotel.
-    if (hotel.ownerId !== userId) {
-      const error = new Error("Unauthorized: You are not the owner of this hotel.");
-      error.status = 403;
-      throw error;
-    }
+    const images = (Array.isArray(data.images) ? data.images : [])
+                      .map(img => typeof img === 'string' ? img.trim() : '')
+                      .filter(url => url && url.length > 10 && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')));
 
-    // Create the room type.
-    const newRoomType = await prisma.roomType.create({
-      data: {
-        name: data.name,
-        pricePerNight: Number(data.pricePerNight),
-        availableRooms: Number(data.availableRooms),
-        amenities: data.amenities || [],
-        images: data.images || [],
-        hotelId: Number(hotelId),
-      },
-    });
+    const createPayload = { name, pricePerNight: priceValue, availableRooms: roomsValue, amenities, images, hotelId: hotelIdNum };
+    console.log(`Service: Creating room type payload:`, createPayload);
+
+    // --- Prisma Create ---
+    const newRoomType = await prisma.roomType.create({ data: createPayload });
+    console.log("Service: Room type created successfully:", newRoomType.id);
     return newRoomType;
+
   } catch (error) {
-    // Wrap and propagate the error with a proper status code.
-    const err = new Error("Failed to create room type: " + error.message);
-    err.status = error.status || 500;
-    throw err;
+    console.error(`Service Error creating room type for hotel ${hotelId}:`, error);
+    if (!error.status) {
+        const err = new Error(`Failed to create room type: ${error.message}`);
+        err.status = 500;
+        throw err;
+    }
+    throw error;
   }
 }
-
 
 export async function updateRoomTypeService(hotelId, roomTypeId, data, userId) {
-  try {
-    // Fetch the room type along with its bookings.
-    const roomType = await prisma.roomType.findUnique({
-      where: { id: Number(roomTypeId) },
-      include: { bookings: true },
-    });
-
-    if (!roomType || roomType.hotelId !== Number(hotelId)) {
-      throw new Error("Room type not found for this hotel");
-    }
-
-    // Determine new available room count.
-    // If data.availableRooms is provided, use it; otherwise, keep the current count.
-    const newAvailability =
-      data.availableRooms !== undefined
-        ? Number(data.availableRooms)
-        : roomType.availableRooms;
-
-    // Filter active bookings: confirmed and with a check-in date in the future.
-    const activeBookings = roomType.bookings.filter(booking => {
-      return booking.status === "confirmed" && new Date(booking.checkInDate) > new Date();
-    });
-
-    // If new availability is less than the number of active bookings, cancel the excess ones.
-    if (newAvailability < activeBookings.length) {
-      const bookingsToCancelCount = activeBookings.length - newAvailability;
-      
-      // Sort active bookings descending by creation date (cancel the most recent ones).
-      activeBookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      const bookingsToCancel = activeBookings.slice(0, bookingsToCancelCount);
-      for (const booking of bookingsToCancel) {
-        await prisma.booking.update({
-          where: { id: booking.id },
-          data: { status: "cancelled" },
-        });
-        // TODO:consider triggering a notification to the affected user here.
-      }
-    }
-
-    // Now update the room type with the new data.
-    const updatedRoomType = await prisma.roomType.update({
-      where: { id: Number(roomTypeId) },
-      data: {
-        name: data.name || roomType.name,
-        amenities: data.amenities || roomType.amenities,
-        pricePerNight: data.pricePerNight ? Number(data.pricePerNight) : roomType.pricePerNight,
-        availableRooms: newAvailability,
-        images: data.images || roomType.images,
-      },
-    });
-    return updatedRoomType;
-  } catch (error) {
-    throw new Error("Failed to update room type: " + error.message);
+  const hotelIdNum = Number(hotelId);
+  const roomTypeIdNum = Number(roomTypeId);
+  if (isNaN(hotelIdNum) || isNaN(roomTypeIdNum)) {
+       const err = new Error("Invalid Hotel or Room Type ID provided.");
+       err.status = 400;
+       throw err;
   }
+
+try {
+  // 1. Fetch RoomType WITH Hotel for Ownership Check & relevant bookings
+  const roomType = await prisma.roomType.findUnique({
+    where: { id: roomTypeIdNum },
+    include: {
+         hotel: { select: { ownerId: true } },
+         bookings: { where: { status: 'confirmed', checkInDate: { gt: new Date() } } }
+      },
+  });
+
+  if (!roomType || roomType.hotelId !== hotelIdNum) {
+    const err = new Error("Room type not found or does not belong to the hotel.");
+    err.status = 404;
+    throw err;
+  }
+  if (roomType.hotel.ownerId !== userId) {
+    const err = new Error("Unauthorized: You do not own this hotel.");
+    err.status = 403;
+    throw err;
+  }
+
+  // 2. Prepare Update Payload & Validate Input Data
+  const updatePayload = {}; // Plain JS object
+  let newAvailability = roomType.availableRooms;
+
+  if (data.name !== undefined) { /* ... validate and add name ... */ updatePayload.name = data.name.trim(); }
+  if (data.pricePerNight !== undefined) { /* ... validate and add price ... */ updatePayload.pricePerNight = Number(data.pricePerNight); }
+  if (data.availableRooms !== undefined) { /* ... validate and add rooms ... */ newAvailability = Number(data.availableRooms); updatePayload.availableRooms = newAvailability; }
+  if (data.amenities !== undefined) { /* ... sanitize and add amenities ... */ updatePayload.amenities = (Array.isArray(data.amenities) ? data.amenities : []).map(a => typeof a === 'string' ? a.trim() : '').filter(Boolean); }
+  if (data.images !== undefined) { /* ... sanitize and add images ... */ updatePayload.images = (Array.isArray(data.images) ? data.images : []).map(img => typeof img === 'string' ? img.trim() : '').filter(url => url && url.length > 10 && (url.startsWith('http') || url.startsWith('/'))); }
+
+   if (Object.keys(updatePayload).length === 0) { /* ... return original roomType ... */ }
+
+  // 3. Handle Booking Cancellations
+  if (data.availableRooms !== undefined && newAvailability < roomType.availableRooms) {
+    const activeBookings = roomType.bookings;
+    if (newAvailability < activeBookings.length) {
+      console.log(`Warning: Reducing available rooms from ${roomType.availableRooms} to ${newAvailability} will require canceling ${activeBookings.length - newAvailability} bookings`);
+      
+      // Sort bookings by creation date (newest first)
+      const sortedBookings = [...activeBookings].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      
+      // Calculate number of bookings we need to cancel
+      const numBookingsToCancel = activeBookings.length - newAvailability;
+      
+      // Select the newest bookings to cancel
+      const bookingsToCancel = sortedBookings.slice(0, numBookingsToCancel);
+      const bookingIdsToCancel = bookingsToCancel.map(booking => booking.id);
+      
+      console.log(`Service: Canceling ${bookingIdsToCancel.length} bookings due to room availability reduction:`, bookingIdsToCancel);
+      
+      // Update the selected bookings to canceled status
+      await prisma.booking.updateMany({
+        where: {
+          id: { in: bookingIdsToCancel }
+        },
+        data: {
+          status: 'canceled',
+          // cancellationReason: 'Canceled by hotel due to room availability changes'
+        }
+      });
+    }
+  }
+
+  // 4. Perform Prisma Update
+  console.log(`Service: Updating room type ${roomTypeIdNum} with payload:`, updatePayload);
+  const updatedRoomType = await prisma.roomType.update({
+    where: { id: roomTypeIdNum },
+    data: updatePayload,
+  });
+  console.log("Service UpdateRoomType: Update successful.");
+  return updatedRoomType;
+
+} catch (error) { 
+  console.error(`Service Error updating room type ${roomTypeId}:`, error);
+  if (!error.status) {
+      const err = new Error(`Failed to update room type: ${error.message}`);
+      err.status = 500;
+      throw err;
+  }
+  throw error;
 }
+}
+
 
 export async function deleteRoomTypeService(hotelId, roomTypeId, userId) {
   try {
@@ -372,43 +561,152 @@ export async function deleteRoomTypeService(hotelId, roomTypeId, userId) {
   }
 }
 
-export async function checkRoomAvailabilityService(hotelId, startDate, endDate) {
+export async function checkRoomAvailabilityService(hotelId, startDate, endDate, userId) {
+  // Use consistent variable name for numeric ID
+  const hotelIdNum = Number(hotelId);
+  if (isNaN(hotelIdNum)) {
+      const err = new Error("Invalid Hotel ID provided.");
+      err.status = 400;
+      throw err;
+  }
+
   try {
-    // Fetch room types for the hotel along with their bookings.
-    const roomTypes = await prisma.roomType.findMany({
-      where: { hotelId: Number(hotelId) },
-      include: { bookings: true },
+    // --- Date Validation ---
+    if (!startDate || !endDate) {
+        const err = new Error("Both start date and end date are required.");
+        err.status = 400;
+        throw err;
+    }
+    const requestedCheckIn = new Date(startDate);
+    const requestedCheckOut = new Date(endDate);
+    // Check if dates are valid Date objects after parsing
+    if (isNaN(requestedCheckIn.getTime()) || isNaN(requestedCheckOut.getTime())) {
+        const err = new Error("Invalid date format provided.");
+        err.status = 400;
+        throw err;
+    }
+    // Check if end date is strictly after start date
+    if (requestedCheckIn >= requestedCheckOut) {
+        const err = new Error("End date must be after start date.");
+        err.status = 400;
+        throw err;
+    }
+    // --- End Date Validation ---
+
+
+    // --- Ownership Check ---
+    // Fetch only ownerId for efficiency
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: hotelIdNum },
+      select: { ownerId: true }, // Select only ownerId
     });
 
-    // Calculate availability per room type.
-    const availability = roomTypes.map(rt => {
-      // Count bookings that overlap with the provided date range.
-      // A booking overlaps if: booking.checkInDate < endDate AND booking.checkOutDate > startDate.
-      const overlappingBookings = rt.bookings.filter(booking => {
-        return new Date(booking.checkInDate) < new Date(endDate) &&
-               new Date(booking.checkOutDate) > new Date(startDate);
-      });
-      // Compute remaining available rooms (ensure non-negative).
-      const remaining = Math.max(rt.availableRooms - overlappingBookings.length, 0);
-      return {
-        roomTypeId: rt.id,
-        roomTypeName: rt.name,
-        remainingRooms: remaining,
-        pricePerNight: rt.pricePerNight
-      };
+    if (!hotel) {
+      const error = new Error("Hotel not found.");
+      error.status = 404;
+      throw error;
+    }
+    if (hotel.ownerId !== userId) {
+      const error = new Error("Unauthorized: Only the hotel owner can check room availability.");
+      error.status = 403; // Forbidden
+      throw error;
+    }
+    // --- End Ownership Check ---
+
+    console.log(`Service: Checking availability for owned hotel ${hotelIdNum} between ${startDate} and ${endDate}`);
+
+    // Optimization: Only include CONFIRMED bookings that could possibly overlap.
+    const roomTypes = await prisma.roomType.findMany({
+      where: { hotelId: hotelIdNum },
+      select: { // Select only necessary fields
+        id: true,
+        name: true,
+        availableRooms: true,
+        pricePerNight: true,
+      },
     });
-    return availability;
+
+    if (roomTypes.length === 0) {
+        console.log(`Service: No room types found for hotel ${hotelIdNum}.`);
+        return []; // Return empty array if no rooms exist
+    }
+
+    // Get IDs of the room types for this hotel
+    const roomTypeIds = roomTypes.map(rt => rt.id);
+
+    // Find CONFIRMED bookings for THESE room types that OVERLAP the date range
+    const overlappingBookings = await prisma.booking.findMany({
+        where: {
+            roomTypeId: { in: roomTypeIds },
+            status: 'confirmed', 
+            AND: [
+                { checkInDate: { lt: requestedCheckOut } }, // Booking starts before requested end
+                { checkOutDate: { gt: requestedCheckIn } }, // Booking ends after requested start
+            ]
+        },
+        select: { // Only need roomTypeId for counting
+            roomTypeId: true,
+        }
+    });
+
+    // --- Calculate Availability per Room Type ---
+    const availabilityResults = roomTypes.map(rt => {
+        // Count how many CONFIRMED bookings overlap for THIS specific room type
+        const bookedCount = overlappingBookings.filter(b => b.roomTypeId === rt.id).length;
+
+        // Calculate remaining rooms (base count minus overlapping confirmed bookings)
+        const remainingRooms = Math.max(0, rt.availableRooms - bookedCount);
+
+        console.log(`Room ${rt.id} (${rt.name}): Total=${rt.availableRooms}, Booked=${bookedCount}, Remaining=${remainingRooms}`);
+
+        return {
+            roomTypeId: rt.id,
+            roomTypeName: rt.name,
+            totalRooms: rt.availableRooms, // Base physical count
+            bookedCount: bookedCount, // Confirmed bookings during the period
+            remainingRooms: remainingRooms, // Calculated available
+            pricePerNight: rt.pricePerNight
+        };
+    });
+
+    console.log("Service: Availability results calculated:", availabilityResults.length);
+    return availabilityResults; // Return the array of calculated results
+
   } catch (error) {
-    throw new Error("Failed to check availability: " + error.message);
+    console.error(`Service Error checking availability for hotel ${hotelId}:`, error);
+    // Preserve status code if already set (e.g., from validation)
+    if (!error.status) {
+        const err = new Error(`Failed to check availability: ${error.message}`);
+        err.status = 500; // Default internal server error
+        throw err;
+    }
+    throw error; // Re-throw errors with status codes
   }
 }
 
-export async function filterHotelBookingsService(hotelId, filters) {
+export async function filterHotelBookingsService(hotelId, filters, userId) {
   try {
     // Validate hotelId
     if (!hotelId || isNaN(Number(hotelId))) {
       const error = new Error("Invalid hotelId provided.");
       error.status = 400;
+      throw error;
+    }
+    
+    // Check if the user is the owner of the hotel
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: Number(hotelId) },
+    });
+
+    if (!hotel) {
+      const error = new Error("Hotel not found.");
+      error.status = 404;
+      throw error;
+    }
+
+    if (hotel.ownerId !== userId) {
+      const error = new Error("Unauthorized: Only the hotel owner can view booking information.");
+      error.status = 403;
       throw error;
     }
     

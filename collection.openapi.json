@@ -1,0 +1,1184 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "postman_collection",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/api/auth/signup": {
+      "post": {
+        "summary": "Sign Up",
+        "description": "### Signup User\n\n**This was generated using Postbot AI\n\nThis endpoint allows the client to create a new user account by providing the user's first name, last name, email, phone number, and password.\n\n#### Request Body\n\n- `firstName` (string): The first name of the user.\n    \n- `lastName` (string): The last name of the user.\n    \n- `email` (string): The email address of the user.\n    \n- `phoneNumber` (string): The phone number of the user.\n    \n- `password` (string): The password for the user account.\n    \n\n#### Response\n\nUpon successful user creation, the server responds with a status code of 200 and a JSON object containing a success message and user details including the user's unique ID, first name, last name, email, phone number, profile picture, creation timestamp, and refresh token.",
+        "operationId": "signUp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "yoyoyoyoyo1@gmail.com"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "example": "Test_User"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Test_User_LastName"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "testUser123456789"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "123456744511"
+                  }
+                }
+              },
+              "examples": {
+                "Sign Up": {
+                  "value": {
+                    "email": "yoyoyoyoyo1@gmail.com",
+                    "firstName": "Test_User",
+                    "lastName": "Test_User_LastName",
+                    "password": "testUser123456789",
+                    "phoneNumber": "123456744511"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "LogIn",
+        "description": "### Auth Login\n\n**Generated using Postbot AI\n\nThis endpoint allows the user to log in and obtain access and refresh tokens.\n\n#### Request Body\n\n- email (text, required): The email of the user.\n    \n- password (text, required): The password of the user.\n    \n\n#### Response\n\nThe response is in JSON format and includes the following fields:\n\n- accessToken (string): The access token for the authenticated user.\n    \n- refreshToken (string): The refresh token for the authenticated user.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "Test_Usei944u9urlllll@gmail.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "testUser123456789"
+                  }
+                }
+              },
+              "examples": {
+                "LogIn": {
+                  "value": {
+                    "email": "Test_Usei944u9urlllll@gmail.com",
+                    "password": "testUser123456789"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Refresh",
+        "description": "### Request Body\n\n**Generated using Postbot AI\n\n- refresh token (string, required): The refresh token used to obtain a new access token.",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "example": "{{refresh_token}}"
+                  }
+                }
+              },
+              "examples": {
+                "Refresh": {
+                  "value": {
+                    "refreshToken": "{{refresh_token}}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Log Out",
+        "description": "### Auth Logout\n\n**Generated using Postbot AI\n\nThis endpoint is used to log out a user from the system.\n\n#### Request Body\n\n- `userId`: The ID of the user to be logged out.\n    \n\n#### Response\n\nThe response to this request will depend on the success of the logout operation.",
+        "operationId": "logOut",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "example": "1"
+                  }
+                }
+              },
+              "examples": {
+                "Log Out": {
+                  "value": {
+                    "userId": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "Get Notifications",
+        "description": "The API endpoint retrieves notifications for a specific user identified by the userId parameter.\n\n**Generated using Postbot AI\n\n### Response\n\nThe response returns a JSON object with a key \"notification\" containing an array of notification objects. Each notification object has the following properties:\n\n- `id` (number): The unique identifier for the notification.\n    \n- `userId` (number): The identifier of the user to whom the notification belongs.\n    \n- `message` (string): The content of the notification message.\n    \n- `isRead` (boolean): Indicates whether the notification has been read or not.\n    \n- `createdAt` (string): The timestamp indicating when the notification was created.",
+        "operationId": "getNotifications",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      },
+      "patch": {
+        "summary": "Set Notification as Read",
+        "description": "### Update Notification\n\n**Generated using Postbot AI\n\nThis endpoint is used to update a specific notification by its ID.\n\n#### Request\n\n- Method: PATCH\n    \n- URL: `http://localhost:3000/api/notifications?notificationId=1`\n    \n- Body: N/A\n    \n- `message` property.",
+        "operationId": "setNotificationAsRead",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/api/notifications/count": {
+      "get": {
+        "summary": "Get Notification Count",
+        "description": "### Get Notification Count\n\n**Generated using Postbot AI\n\nThis endpoint retrieves the count of notifications for a specific user.\n\n#### Request\n\n- Method: GET\n    \n- URL: `http://localhost:3000/api/notifications/count`\n    \n- Query Parameters:\n    \n    - `userId` (number, required): The ID of the user for whom the notification count is requested.\n        \n\n#### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n- { \"count\": 0}  \n    The response contains the count of notifications for the specified user.",
+        "operationId": "getNotificationCount",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "4"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/api/user/update": {
+      "patch": {
+        "summary": "Edit User",
+        "description": "### Update User Details\n\n**Generated using Postbot AI\n\nThis endpoint is used to update the details of a specific user.\n\n#### Request\n\n- Method: PATCH\n    \n- URL: `http://localhost:3000/api/user/update?userId=1`\n    \n- Headers:\n    \n    - Content-Type: application/json",
+        "operationId": "editUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phoneNumber": {
+                    "type": "string",
+                    "example": "56789109999128"
+                  }
+                }
+              },
+              "examples": {
+                "Edit User": {
+                  "value": {
+                    "phoneNumber": "56789109999128"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/hotels/index": {
+      "get": {
+        "summary": "Get/List Hotels",
+        "description": "This endpoint makes an HTTP GET request to retrieve a list of hotels based on the provided parameters. The request includes query parameters such as city, check-in date, check-out date, hotel name, star rating, minimum price, maximum price, and amenities.\n\n**Genereated using PostbotAI\n\n### Request Parameters\n\n- `city` (string): The city for which hotels are being searched.\n    \n- `checkInDate` (string): The check-in date for the hotel stay.\n    \n- `checkOutDate` (string): The check-out date for the hotel stay.\n    \n- `name` (string): The name of the hotel being searched.\n    \n- `starRating` (number): The star rating of the hotel.\n    \n- `minPrice` (number): The minimum price range for the hotel stay.\n    \n- `maxPrice` (number): The maximum price range for the hotel stay.\n    \n- `amenities` (string): The amenities desired, separated by commas.\n    \n\n### Response\n\nThe response will include a list of hotels that match the provided criteria. Each hotel object may contain details such as name, address, star rating, price, and amenities.",
+        "operationId": "getListHotels",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Hotel",
+        "description": "### POST /api/hotels/index\n\n**Genereated using PostbotAI\n\nThis endpoint is used to create a new hotel entry in the database.\n\n#### Request Body\n\n- name (string, required): The name of the hotel.\n    \n- address (string, required): The address of the hotel.\n    \n- location (string, required): The location of the hotel.\n    \n- starRating (number, required): The star rating of the hotel.\n    \n- images (array of strings, required): The images of the hotel.",
+        "operationId": "createHotel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "example": "123 Main Street"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "image1.jpg"
+                    },
+                    "example": [
+                      "image1.jpg",
+                      "image2.png"
+                    ]
+                  },
+                  "location": {
+                    "type": "string",
+                    "example": "Toronto"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "Grandddd Hotel"
+                  },
+                  "starRating": {
+                    "type": "number",
+                    "example": 4.5
+                  }
+                }
+              },
+              "examples": {
+                "Create Hotel": {
+                  "value": {
+                    "address": "123 Main Street",
+                    "images": [
+                      "image1.jpg",
+                      "image2.png"
+                    ],
+                    "location": "Toronto",
+                    "name": "Grandddd Hotel",
+                    "starRating": 4.5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/hotels/{hotel_id}": {
+      "get": {
+        "summary": "Get Hotel By ID",
+        "description": "This endpoint retrieves information about a specific hotel with the ID of 1.\n\n**Genereated using PostbotAI\n\n### Request\n\n- Method: GET\n    \n- URL: `http://localhost:3000/api/hotels/1`\n    \n\n### Response\n\nThe response will include the details of the hotel, such as its name, address, contact information, and any other relevant information.",
+        "operationId": "getHotelById",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Hotel",
+        "description": "### Delete Hotel\n\n**Genereated using PostbotAI\n\nThis endpoint is used to delete a specific hotel by its ID.\n\n#### Request\n\n- Method: DELETE\n    \n- Endpoint: `{{baseURL}}/api/hotels/5`\n    \n\n#### Response\n\nThe response for this request will be a JSON schema representing the success or failure of the deletion operation.",
+        "operationId": "deleteHotel",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update Hotel",
+        "description": "This endpoint makes an HTTP PATCH request to update the details of a specific hotel with ID 1. The request should include a JSON payload with the updated name, address, location, star rating, and images of the hotel.\n\n**Genereated using PostbotAI\n\n### Request Body\n\n- `name` (string): The updated name of the hotel.\n    \n- `address` (string): The new address of the hotel.\n    \n- `location` (string): The updated location of the hotel.\n    \n- `starRating` (number): The new star rating of the hotel.\n    \n- `images` (array of strings): An array of updated images for the hotel.\n    \n\n### Response\n\nThe response will contain the updated details of the hotel after the PATCH request is processed.",
+        "operationId": "updateHotel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "example": "789 New Address"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "updatedImage.png"
+                    },
+                    "example": [
+                      "updatedImage.png"
+                    ]
+                  },
+                  "location": {
+                    "type": "string",
+                    "example": "Vancouver"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "Updated Hotel Name333"
+                  },
+                  "starRating": {
+                    "type": "number",
+                    "example": 4
+                  }
+                }
+              },
+              "examples": {
+                "Update Hotel": {
+                  "value": {
+                    "address": "789 New Address",
+                    "images": [
+                      "updatedImage.png"
+                    ],
+                    "location": "Vancouver",
+                    "name": "Updated Hotel Name333",
+                    "starRating": 4
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "name": "hotel_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/hotels/bookings": {
+      "get": {
+        "summary": "List Hotel Bookings",
+        "description": "### Get Hotel Bookings\n\n**Genereated using PostbotAI\n\nThis endpoint retrieves the bookings for a specific hotel.\n\n#### Request\n\n- Method: GET\n    \n- URL: `http://localhost:3000/api/hotels/bookings`\n    \n- Query Parameters:\n    \n    - hotelId (required): The ID of the hotel for which bookings are to be retrieved.\n        \n\n#### Response\n\nThe response for this request is a JSON object representing the bookings for the specified hotel. The JSON schema for the response can be described as follows:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"bookingId\": {\n      \"type\": \"string\"\n    },\n    \"guestName\": {\n      \"type\": \"string\"\n    },\n    \"checkInDate\": {\n      \"type\": \"string\",\n      \"format\": \"date\"\n    },\n    \"checkOutDate\": {\n      \"type\": \"string\",\n      \"format\": \"date\"\n    },\n    \"roomType\": {\n      \"type\": \"string\"\n    },\n    \"totalAmount\": {\n      \"type\": \"number\"\n    }\n  }\n}\n\n ```",
+        "operationId": "listHotelBookings",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create Hotel Bookings",
+        "description": "Create Hotel Bookings",
+        "operationId": "createHotelBookings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "checkInDate": {
+                    "type": "string",
+                    "example": "2025-03-10"
+                  },
+                  "checkOutDate": {
+                    "type": "string",
+                    "example": "2025-03-12"
+                  },
+                  "hotelId": {
+                    "type": "number",
+                    "example": 5
+                  },
+                  "roomTypeId": {
+                    "type": "number",
+                    "example": 5
+                  }
+                }
+              },
+              "examples": {
+                "Create Hotel Bookings": {
+                  "value": {
+                    "checkInDate": "2025-03-10",
+                    "checkOutDate": "2025-03-12",
+                    "hotelId": 5,
+                    "roomTypeId": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Cancel Hotel Booking",
+        "description": "This endpoint is used to cancel a hotel booking by sending an HTTP DELETE request to the specified URL. The request should include the bookingId as a query parameter to identify the booking to be canceled.\n\n**Genereated using PostbotAI\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response\n\nUpon a successful cancellation, the response will include a confirmation message indicating that the booking has been successfully canceled. If the bookingId provided is not found or there is an error in the cancellation process, an appropriate error message will be returned.",
+        "operationId": "cancelHotelBooking",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "examples": {
+                "Cancel Hotel Booking": {
+                  "value": {
+                    "bookingId": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/hotels/{hotel_id}/room-types/{room_type_id}": {
+      "delete": {
+        "summary": "Delete Room-Type",
+        "description": "### Delete Hotel Room Types\n\n**Genereated using PostbotAI\n\nThis endpoint sends an HTTP DELETE request to remove the room types associated with a specific hotel.\n\n#### Response\n\nThe response for this request is a JSON schema representing the structure of the data returned upon successful deletion of the room types.",
+        "operationId": "deleteRoomType",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update Room-Type",
+        "description": "# Update Room Type Details\n\nThis endpoint is used to update the details of a specific room type for a hotel.\n\n**Genereated using PostbotAI\n\n## Request\n\n- Method: PATCH\n    \n- URL: `http://localhost:3000/api/hotels/3/room-types/1`\n    \n- Headers:\n    \n    - Content-Type: application/json\n        \n- { \"pricePerNight\": 220, \"availableRooms\": 3}\n    \n\n## Response\n\nThe response for this request follows the JSON schema below:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"success\": {\n      \"type\": \"boolean\"\n    },\n    \"message\": {\n      \"type\": \"string\"\n    },\n    \"data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"integer\"\n        },\n        \"pricePerNight\": {\n          \"type\": \"number\"\n        },\n        \"availableRooms\": {\n          \"type\": \"integer\"\n        }\n        // Additional properties based on the response data\n      }\n    }\n  }\n}\n\n ```",
+        "operationId": "updateRoomType",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "availableRooms": {
+                    "type": "number",
+                    "example": 3
+                  },
+                  "pricePerNight": {
+                    "type": "number",
+                    "example": 220
+                  }
+                }
+              },
+              "examples": {
+                "Update Room-Type": {
+                  "value": {
+                    "availableRooms": 3,
+                    "pricePerNight": 220
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "hotel_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "room_type_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/hotels/{hotel_id}/room-types": {
+      "post": {
+        "summary": "Create Room-Type",
+        "description": "### Create Room Type\n\nThis endpoint allows the client to create a new room type for a specific hotel.\n\n**Genereated using PostbotAI\n\n#### Request Body\n\n- `name` (string): The name of the room type.\n    \n- `pricePerNight` (number): The price per night for the room type.\n    \n- `availableRooms` (number): The number of available rooms for the room type.\n    \n- `amenities` (array of strings): The amenities available in the room type.\n    \n- `images` (array of strings): The images of the room type.\n    \n\n#### Response\n\nThe response is in JSON format and includes the schema for the `roomType` object.\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"roomType\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"number\"\n        },\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"amenities\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"pricePerNight\": {\n          \"type\": \"number\"\n        },\n        \"availableRooms\": {\n          \"type\": \"number\"\n        },\n        \"images\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"hotelId\": {\n          \"type\": \"number\"\n        }\n      }\n    }\n  }\n}\n\n ```",
+        "operationId": "createRoomType",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amenities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "WiFi"
+                    },
+                    "example": [
+                      "WiFi",
+                      "TV",
+                      "Mini Bar"
+                    ]
+                  },
+                  "availableRooms": {
+                    "type": "number",
+                    "example": 5
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "room1.jpg"
+                    },
+                    "example": [
+                      "room1.jpg",
+                      "room2.png"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "Deluxe Suite"
+                  },
+                  "pricePerNight": {
+                    "type": "number",
+                    "example": 200
+                  }
+                }
+              },
+              "examples": {
+                "Create Room-Type": {
+                  "value": {
+                    "amenities": [
+                      "WiFi",
+                      "TV",
+                      "Mini Bar"
+                    ],
+                    "availableRooms": 5,
+                    "images": [
+                      "room1.jpg",
+                      "room2.png"
+                    ],
+                    "name": "Deluxe Suite",
+                    "pricePerNight": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "name": "hotel_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/hotels/{hotel_id}/availability": {
+      "get": {
+        "summary": "Get-Room-Availability",
+        "description": "This endpoint retrieves the availability of a specific hotel for a given date range.\n\n**Genereated using PostbotAI\n\n### Request\n\n#### Request Parameters\n\n- `HOTEL_ID` (path parameter): The unique identifier of the hotel.\n    \n- `startDate` (query parameter): The start date of the availability search (format: YYYY-MM-DD).\n    \n- `endDate` (query parameter): The end date of the availability search (format: YYYY-MM-DD).\n    \n\n### Response\n\nThe response will include the availability status of the hotel for the specified date range.",
+        "operationId": "getRoomAvailability",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2025-04-01"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2025-04-05"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "hotel_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/hotels/1/bookings": {
+      "get": {
+        "summary": "Filter-Hotel-Bookings",
+        "description": "This endpoint retrieves the bookings for a specific hotel and room type within a specified date range. The request should include the hotel ID in the URL path, and the room type ID, start date, and end date as query parameters.\n\n**Genereated using PostbotAI\n\n### Request Body\n\nThis request does not require a request body.\n\n### Response Body\n\nThe response will include the details of the bookings for the specified hotel and room type within the provided date range.",
+        "operationId": "filterHotelBookings",
+        "parameters": [
+          {
+            "name": "roomTypeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2025-04-01"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2025-04-30"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "summary": "Create Booking Itinerary",
+        "description": "Create Booking Itinerary",
+        "operationId": "createBookingItinerary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "flightBooking": {
+                    "type": "string",
+                    "example": "AE6838"
+                  },
+                  "hotelBooking": {
+                    "type": "number",
+                    "example": 2
+                  }
+                }
+              },
+              "examples": {
+                "Create Booking Itinerary": {
+                  "value": {
+                    "flightBooking": "AE6838",
+                    "hotelBooking": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/bookings/cancel": {
+      "post": {
+        "summary": "Cancel booking itinerary",
+        "description": "### Cancel Booking\n\n**Genereated using PostbotAI\n\nThis endpoint is used to cancel a hotel booking.\n\n#### Request Body\n\n- `hotelBooking`: The ID of the hotel booking to be canceled.\n    \n\n#### Response\n\nUpon successful cancellation, the server returns a 200 status with a JSON response containing a message indicating the status of the cancellation.",
+        "operationId": "cancelBookingItinerary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hotelBooking": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "examples": {
+                "Cancel booking itinerary": {
+                  "value": {
+                    "hotelBooking": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/bookings/checkout": {
+      "post": {
+        "summary": "Booking Checkout",
+        "description": "### Checkout Booking\n\n**Genereated using PostbotAI\n\nThis endpoint is used to process the checkout for a booking. It requires the following parameters in the request body:\n\n- `cardNumber` (string): The card number for payment.\n    \n- `expiryDate` (string): The expiry date of the card in the format 'YYYY/MM/DD'.\n    \n- `cvv` (string): The Card Verification Value.\n    \n- `validate` (boolean): Indicates whether to validate the payment.\n    \n- `itineraryId` (string): The ID of the itinerary to be checked out.\n    \n\n#### Request Body\n\n- `cardNumber` (text): The card number for payment.\n    \n- `expiryDate` (text): The expiry date of the card in the format 'YYYY/MM/DD'.\n    \n- `cvv` (text): The Card Verification Value.\n    \n- `validate` (text): Indicates whether to validate the payment.\n    \n- `itineraryId` (text): The ID of the itinerary to be checked out.\n    \n\n#### Response\n\n- Status: 400\n    \n- Content-Type: application/json\n    \n- { \"error\": \"\"}",
+        "operationId": "bookingCheckout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cardNumber": {
+                    "type": "string",
+                    "example": "4242424242424242"
+                  },
+                  "cvv": {
+                    "type": "string",
+                    "example": "123"
+                  },
+                  "expiryDate": {
+                    "type": "string",
+                    "example": "2027/09/01"
+                  },
+                  "itineraryId": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "validate": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              },
+              "examples": {
+                "Booking Checkout": {
+                  "value": {
+                    "cardNumber": "4242424242424242",
+                    "cvv": "123",
+                    "expiryDate": "2027/09/01",
+                    "itineraryId": "1",
+                    "validate": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/bookings/view": {
+      "get": {
+        "summary": "List Bookings",
+        "description": "### API Request Description\n\n**Genereated using PostbotAI\n\nThis endpoint makes an HTTP GET request to retrieve the booking details for a specific itinerary ID.\n\n#### Request\n\n- Method: GET\n    \n- URL: `http://localhost:3000/api/bookings/view`\n    \n- Query Parameter:\n    \n    - `itineraryId` (number) - The ID of the itinerary for which the booking details are to be retrieved.\n        \n\n#### Response\n\nThe response is in JSON format and includes the booking details for the specified itinerary ID. The response schema is as follows:\n\n``` json\n{\n  \"hotelBooking\": {},\n  \"flightBooking\": {\n    \"bookingReference\": \"\",\n    \"ticketNumber\": \"\",\n    \"firstName\": \"\",\n    \"lastName\": \"\",\n    \"email\": \"\",\n    \"passportNumber\": \"\",\n    \"status\": \"\",\n    \"agencyId\": \"\",\n    \"createdAt\": \"\",\n    \"flights\": [\n      {\n        \"id\": \"\",\n        \"flightNumber\": \"\",\n        \"departureTime\": \"\",\n        \"arrivalTime\": \"\",\n        \"originId\": \"\",\n        \"destinationId\": \"\",\n        \"duration\": 0,\n        \"price\": 0,\n        \"currency\": \"\",\n        \"availableSeats\": 0,\n        \"status\": \"\",\n        \"airline\": {\n          \"code\": \"\",\n          \"name\": \"\"\n        },\n        \"origin\": {\n          \"code\": \"\",\n          \"name\": \"\",\n          \"city\": \"\",\n          \"country\": \"\"\n        },\n        \"destination\": {\n          \"code\": \"\",\n          \"name\": \"\",\n          \"city\": \"\",\n          \"country\": \"\"\n        }\n      }\n    ]\n  }\n}\n\n ```",
+        "operationId": "listBookings",
+        "parameters": [
+          {
+            "name": "itineraryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/flights/booking": {
+      "post": {
+        "summary": "Book a flight",
+        "description": "### Flight Booking\n\nUse of Postbot AI\n\nThis endpoint is used to book flights by providing the flight IDs and passport number in the request body.\n\nMETHOD: POST\n\n#### Request Body\n\n- `flightIds` (array of strings) - An array of unique identifiers for the flights to be booked.\n    \n- `passportNumber` (string) - The passport number of the passenger making the booking.\n    \n\n#### Response\n\nUpon a successful booking, the API returns a status code of 200 and a response body in plain text format containing the booking details, including the booking reference, ticket number, passenger details, flight details, and more.\n\nExample Response Body:\n\n```\n{\"bookingReference\":\"579A1D\",\"ticketNumber\":\"1d8065ab55\",\"firstName\":\"Test_User\",\"lastName\":\"Test_User_LastName\",\"email\":\"Test_Usei944u9urlllll@gmail.com\",\"passportNumber\":\"1234567890\",\"status\":\"CONFIRMED\",\"agencyId\":\"4dd75fa2-f0cc-432b-8a84-04060ec2df66\",\"createdAt\":\"2025-03-09T02:03:17.399Z\",\"flights\":[{\"id\":\"f572ee8c-7db6-47ef-ac7d-fe1405c31323\",\"flightNumber\":\"AC6258\",\"departureTime\":\"2024-11-19T17:25:00.000Z\",\"arrivalTime\":\"2024-11-19T23:00:00.000Z\",\"originId\":\"370d2633-ba94-47f5-a735-513c0e332224\",\"destinationId\":\"63cea601-895c-4d63-bf1e-746b604f3ff7\",\"duration\":335,\"price\":1962,\"currency\":\"CAD\",\"availableSeats\":175,\"status\":\"SCHEDULED\",\"airline\":{\"code\":\"AC\",\"name\":\"Air Canada\"},\"origin\":{\"code\":\"YYZ\",\"name\":\"Toronto Pearson International Airport\",\"city\":\"Toronto\",\"country\":\"Canada\"},\"destination\":{\"code\":\"KUL\",\"name\":\"Kuala Lumpur International Airport\",\"city\":\"Kuala Lumpur\",\"country\":\"Malaysia\"}}]}\n\n ```",
+        "operationId": "bookAFlight",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "flightIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "example": "f572ee8c-7db6-47ef-ac7d-fe1405c31323"
+                    },
+                    "example": [
+                      "f572ee8c-7db6-47ef-ac7d-fe1405c31323"
+                    ]
+                  },
+                  "passportNumber": {
+                    "type": "string",
+                    "example": "1234567890"
+                  }
+                }
+              },
+              "examples": {
+                "Book a flight": {
+                  "value": {
+                    "flightIds": [
+                      "f572ee8c-7db6-47ef-ac7d-fe1405c31323"
+                    ],
+                    "passportNumber": "1234567890"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/flights/search": {
+      "get": {
+        "summary": "Flight Search",
+        "description": "# Flight Search\n\nUse of Postbot AI\n\nThis endpoint performs an HTTP GET request to search for flights based on the provided source, destination, and dates. The response is in plain text format and includes an array of flight objects. Each flight object contains an ID, a list of flight IDs, departure time, arrival time, duration, and layovers.\n\nThe response JSON structure includes the following key-value pairs for each flight object:\n\n- \"id\": The unique identifier for the flight.\n    \n- \"flightIds\": A list of flight IDs associated with the flight.\n    \n- \"departure_time\": The time of departure for the flight.\n    \n- \"arrival_time\": The time of arrival for the flight.\n    \n- \"duration\": The duration of the flight.\n    \n- \"layovers\": A list of layover locations during the flight.\n    \n\nThis endpoint makes an HTTP GET request to search for flights based on the source, destination, and dates provided in the query parameters.\n\n#### Request Parameters\n\n- `source` (string, required): The source airport code.\n    \n- `destination` (string, required): The destination airport code.\n    \n- `dates` (string, required): The date for the flight search.\n    \n\n#### Response\n\nThe response of this request is a JSON schema describing the structure of the flight search results. The schema includes the properties and data types of the response fields, allowing developers to understand the format of the data returned by the API.\n\nExample JSON Schema:\n\n``` json\n[{\"id\":1,\"flightIds\":[\"b39529a6-6fa9-44d7-861d-a188a0ff561b\",\"a6a84889-c585-4eb7-b86e-45327a3deb03\"],\"departure_time\":\"2024-11-19T13:45:00.000Z\",\"arrival_time\":\"2024-11-20T13:35:00.000Z\",\"duration\":1335,\"layovers\":[\"CGK\"]}]\n\n ```",
+        "operationId": "flightSearch",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "JED"
+            }
+          },
+          {
+            "name": "destination",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "Shanghai"
+            }
+          },
+          {
+            "name": "dates",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2024-11-19"
+            }
+          },
+          {
+            "name": "",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/api/flights/verifybookings": {
+      "get": {
+        "summary": "Verify Flight",
+        "description": "### Verify Flight Bookings\n\nUse of Postbot AI\n\nThis endpoint is used to verify flight bookings by providing a booking reference as a query parameter.\n\n**Request:**\n\n- Method: GET\n    \n- URL: `http://localhost:3000/api/flights/verifybookings`\n    \n- Query Parameters:\n    \n    - bookingReference (string, required): The reference code for the booking\n        \n\n**Response:**  \nThe response is a JSON array with the following fields for each flight:\n\n- flightNumber (string): The flight number\n    \n- status (string): The status of the flight\n    \n- originCity (string): The origin city of the flight\n    \n- destinationCity (string): The destination city of the flight\n    \n- departureTime (string): The departure time of the flight\n    \n- arrivalTime (string): The arrival time of the flight\n    \n\n**Example:**\n\n``` json\n[\n  {\n    \"flightNumber\": \"\",\n    \"status\": \"\",\n    \"originCity\": \"\",\n    \"destinationCity\": \"\",\n    \"departureTime\": \"\",\n    \"arrivalTime\": \"\"\n  }\n]\n\n ```\n\n### Response\n\nThe response is in the form of a JSON array with the following attributes:\n\n- `flightNumber` (string): The flight number for the booking.\n    \n- `status` (string): The status of the flight.\n    \n- `originCity` (string): The city of origin for the flight.\n    \n- `destinationCity` (string): The destination city for the flight.\n    \n- `departureTime` (string): The departure time of the flight.\n    \n- `arrivalTime` (string): The arrival time of the flight.\n    \n\nThis response can be documented as a JSON schema for validation and understanding of the structure.",
+        "operationId": "verifyFlight",
+        "parameters": [
+          {
+            "name": "bookingReference",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "AE6838"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/bookings/pdf": {
+      "get": {
+        "summary": "Generate PDF",
+        "description": "**Generated using Postbot AI\n\nThis endpoint is used to retrieve a PDF file for a specific itinerary by providing the itinerary ID as a query parameter in the URL.\n\n### Request\n\n- Method: GET\n    \n- Endpoint: [http://localhost:3000/api/bookings/pdf](http://localhost:3000/api/bookings/pdf)\n    \n- Query Parameters:\n    \n    - itineraryId (number, required): The ID of the itinerary for which the PDF file is to be retrieved.\n        \n\n### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n- Body:\n    \n    - url (string): The URL of the PDF file.\n        \n    - message (string): A message related to the retrieval process.\n        \n\nThe response returned is a JSON object with the following schema:\n\n``` json\n{\n    \"type\": \"object\",\n    \"properties\": {\n        \"url\": {\n            \"type\": \"string\"\n        },\n        \"message\": {\n            \"type\": \"string\"\n        }\n    }\n}\n\n ```\n\nThe response includes the URL for the retrieved PDF and a message field for any additional information.",
+        "operationId": "generatePdf",
+        "parameters": [
+          {
+            "name": "itineraryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/afs/test": {
+      "get": {
+        "summary": "Test creation of Cities/Airports",
+        "description": "### Get Cities/Airports Test\n\n**Generated using Postbot AI\n\nThis endpoint makes an HTTP GET request to retrieve the AFS test data.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 200\n    \n- Content-Type: text/plain\n    \n- Body: The response returns the AFS test data in plain text format.\n    \n\nUse of Postbot",
+        "operationId": "testCreationOfCitiesAirports",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": []
+}

@@ -16,7 +16,7 @@ export async function POST(request) {
     });
 
 
-    if (!user || !(comparePassword(password, user.password))){ 
+    if (!user || !(await comparePassword(password, user.password))){ 
         return new Response(JSON.stringify({ error: "Invalid credentials" }), { 
             status: 401,headers: { "Content-Type": "application/json" } 
         });

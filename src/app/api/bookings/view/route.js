@@ -1,4 +1,4 @@
-import { listBookingsService } from "@/services/bookingService";
+import { filterHotelBookingsService } from "@/services/bookingService";
 import {apiClient} from "@/utils/apiClient";
 import { verifyToken } from '@/utils/auth';
 
@@ -35,8 +35,11 @@ export async function GET(request){
             flightInfo = await apiClient('/api/bookings/retrieve',"GET", filters);
         }
 
-        const bookings = listBookingsService(user.id);
-        console.log(user.id);
+        let bookings = null;
+        if (itinerary.hotelBooking){
+            bookings = await prisma.Booking.findUnique({where: {id: parseInt(itinerary.hotelBooking)}});
+        }
+        console.log(bookings);
 
         return new Response(JSON.stringify({hotelBooking: bookings, flightBooking: flightInfo}), {status: 200});
     }catch (error){

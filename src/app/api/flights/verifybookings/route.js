@@ -34,7 +34,9 @@ export async function GET(req){
             departureTime: flight.departureTime,
             arrivalTime: flight.arrivalTime
           }));
+          console.log("API", verif_booking);
         return new Response(JSON.stringify(verif_booking), {status: 200});
+        
     }catch (error){
         return new Response(JSON.stringify({error: 'No flight bookings could be retrieved'}), {status: 400});
     }

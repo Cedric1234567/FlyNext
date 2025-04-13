@@ -19,7 +19,7 @@ export async function GET(req) {
         });
     }
     const notifications = await prisma.notification.findMany({
-      where: { userId, isRead: false },
+      where: { userId: userId, isRead: false },
       orderBy: { createdAt: "desc" },
     });
 
@@ -54,7 +54,7 @@ export async function PATCH(req) {
   } catch (error) {
     console.log(error);
     return new Response(JSON.stringify({ error: "Notification failed to update as read" }), { 
-        status: 500, headers: { "Content-Type": "application/json" } 
+        status: 400, headers: { "Content-Type": "application/json" } 
     });
   }
 }

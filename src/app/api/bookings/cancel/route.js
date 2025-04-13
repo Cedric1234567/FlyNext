@@ -14,23 +14,31 @@ export async function POST(request) {
     
         const user = await prisma.user.findUnique({ where: { email: token.userEmail } });
     
-        const { hotelBooking, flightBooking } = await request.json();
+        const { itineraryId, hotelBooking, flightBooking } = await request.json();
 
-        if (!hotelBooking && !flightBooking) {
+        if (!hotelBooking && !flightBooking && !itineraryId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
+        
+        let booking = null;
 
         if (hotelBooking) {
-            cancelBookingService(hotelBooking, user.id);
+            const bookingCancel = await prisma.itinerary.findUnique({ where: { id: parseInt(itineraryId) } });
+            const bookingid = parseInt(bookingCancel.hotelBooking);
+            cancelBookingService(bookingid, user.id);
             prisma.notification.create({
                 data: {
                     userId: user.id,
-                    message: `Hotel booking has been cancelled for the itinerary with booking id ${hotelBooking}`
+                    message: `Hotel booking has been cancelled for the itinerary with booking id ${bookingid}`
                 }
             });
+            booking = await prisma.booking.findUnique({ where: { id: bookingid } });
+            if (!booking) {
+                return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
+            }
         }
     
-        return NextResponse.json({ message: "Booking has been cancelled" }, { status: 200 });
+        return NextResponse.json({ message: "Booking has been cancelled", hotelBooking: booking }, { status: 200 });
     } catch (error) {
         console.error("Error in POST /api/bookings/cancel:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

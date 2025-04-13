@@ -2,12 +2,25 @@
 import { NextResponse } from "next/server";
 import { filterHotelBookingsService } from "../../../../../services/hotelService";
 import { verifyToken } from "../../../../../utils/auth";
+import { prisma } from '@/prismaClient'; // Import Prisma client
 
 export async function GET(request, { params }) {
   try {
+// Verify authentication
     const token = verifyToken(request);
     if (!token || token.error) {
-      return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized Access: Invalid or missing token' },
+        { status: 401 }
+      );
+    }
+
+    // Look up the user using token data
+    const user = await prisma.user.findUnique({
+      where: { email: token.userEmail },
+    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const { id: hotelId } = params;
@@ -18,7 +31,7 @@ export async function GET(request, { params }) {
       endDate: searchParams.get("endDate")
     };
 
-    const bookings = await filterHotelBookingsService(hotelId, filters);
+    const bookings = await filterHotelBookingsService(hotelId, filters, user.id);
     return NextResponse.json({ bookings }, { status: 200 });
   } catch (error) {
     console.error('Error in GET /api/hotels/bookings:', error);

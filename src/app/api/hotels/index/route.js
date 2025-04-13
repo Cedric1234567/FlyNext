@@ -3,9 +3,13 @@
 import { NextResponse } from 'next/server';
 import { listHotels, createHotel } from '../../../../controllers/hotelController';
 import { verifyToken } from '../../../../utils/auth';
+import { prisma } from '@/prismaClient';
 
 // GET request generated with copilot
 export async function GET(request) {
+  console.log("GET request received in /api/hotels");
+  // Log the request URL for debugging
+  console.log("Request URL:", request.url);
   try {
     const { searchParams } = new URL(request.url);
     
@@ -59,6 +63,8 @@ export async function GET(request) {
 
     // Call the controller/service to list hotels
     const hotels = await listHotels(filters);
+    //print length of hotels
+    console.log("Number of hotels found:", hotels.length);
     return NextResponse.json({ hotels });
   } catch (error) {
     console.error('Error in GET /api/hotels:', error);

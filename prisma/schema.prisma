@@ -1,64 +1,61 @@
 // Schema.prisma
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// generator client {
-//  provider = "prisma-client-js"
-//}
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 
-// "As a user, I want to add my hotel to the platform. A hotel has name, logo, address, location, star-rating, and several images."
 model Hotel {
-  id         Int         @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   name       String
   address    String
-  location   String     
-  starRating Float?      
-  images     Json        // Changed from String[] to Json
-  ownerId    Int         // References the User that created the hotel
-  owner      User        @relation(fields: [ownerId], references: [id])
-  roomTypes  RoomType[]
-  bookings   Booking[]   // Inverse relation for Booking
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  location   String
+  starRating Float?
+  images     Json
+  ownerId    Int
+  owner      User     @relation(fields: [ownerId], references: [id])
+  logoUrl   String?
+  roomTypes  RoomType[] // No onDelete here
+  bookings   Booking[]  // No onDelete here
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
-// "As a hotel owner, I want to define room types, with each type having a name (e.g., twin, double, etc.), amenities, prices per night, and several images."
 model RoomType {
   id             Int      @id @default(autoincrement())
-  name           String   // e.g., twin, double, suite, etc.
-  amenities      Json     // Changed from String[] to Json
+  name           String
+  amenities      String[]
   pricePerNight  Float
   availableRooms Int
-  images         Json     // Changed from String[] to Json
+  images         Json
   hotelId        Int
-  hotel          Hotel    @relation(fields: [hotelId], references: [id])
-  bookings       Booking[] // Inverse relation for Booking
+  // *** onDelete goes on the side WITH the foreign key field (hotelId) ***
+  hotel          Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade) // <-- CORRECT PLACE
+  bookings       Booking[] // No onDelete here
 }
 
-// "As a hotel owner, I want to view and update the number of available rooms of each type in my hotel. As a user, I want to book an itinerary that includes a flight (one-way or round-trip) and/or a hotel reservation."
 model Booking {
   id           Int      @id @default(autoincrement())
-  userId       Int      // References the User who made the booking
-  hotelId      Int      // References the Hotel being booked
-  roomTypeId   Int      // References the RoomType booked
+  userId       Int
+  hotelId      Int
+  roomTypeId   Int
   checkInDate  DateTime
   checkOutDate DateTime
-  status       String   // this can be cancelled, confirmed, etc.
+  status       String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   user     User     @relation(fields: [userId], references: [id])
-  hotel    Hotel    @relation(fields: [hotelId], references: [id])
-  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  // *** onDelete goes on the side WITH the foreign key fields (hotelId, roomTypeId) ***
+  hotel    Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade) // <-- CORRECT PLACE
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade) // <-- CORRECT PLACE (already had it here)
 
   itinerary Itinerary[]
 }

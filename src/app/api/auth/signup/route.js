@@ -8,10 +8,10 @@ export async function POST(request) {
     if (!firstName || !password || !email || !phoneNumber) { 
       return new Response(JSON.stringify({ error: "All the required fields needs to be filled in to create an account" }), { status: 400 });
     }
-    console.log("Jarvis");
+    // console.log("Jarvis");
   
     try {
-        console.log("Bye");
+        // console.log("Bye");
       const user = await prisma.user.create({ 
           data: { 
               firstName,
